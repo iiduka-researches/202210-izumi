@@ -1,0 +1,11 @@
+google-api-python-client
+google-auth-oauthlib
+matplotlib
+numpy
+pandas
+scikit-learn
+torch
+torchfm
+torchtext
+torchvision
+tqdm
