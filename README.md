@@ -1,1 +1,1 @@
-# 202206-izumi
+# An implementation of the scaled conjugate gradient method
