@@ -5,9 +5,12 @@
 To conduct experiments, please execute the following: 
 #### Constant learning rate
 ```shell script
-python main.py <dataset name> <model name> -us
+python main.py -e <dataset name> -m <model name> -us
+#weight decay
+python main.py -e <dataset name> -m <model name> -us -wd <weight decay>
 ```
+
 #### Diminishing learning rate
 ```shell script
-python main.py <dataset name> <model name>
+python main.py -e <dataset name> -m <model name>
 ```
