@@ -6,7 +6,7 @@ from typing import List, Optional
 
 
 class SGD(Optimizer):
-    def __init__(self, params, lr=1e-3, momentum=0, dampening=0, weight_decay=0, nesterov=False, *, maximize=False):
+    def __init__(self, params, lr=1e-2, momentum=0, dampening=0, weight_decay=5e-4, nesterov=False, *, maximize=False):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if momentum < 0.0:

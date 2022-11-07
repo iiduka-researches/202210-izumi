@@ -30,20 +30,32 @@ _scg1_param_dict = dict(
     C1=lambda n: 1e-1,
     C2=lambda n: 1e-2,
     C3=lambda n: 1e-3,
+    C4=lambda n: 1e-4,
+    C5=lambda n: 1e-5,
+    C6=lambda n: 1e-6,
     _1C=lambda n: 1.0,
     _2C=lambda n: 2.0,
     _10C=lambda n: 1e+1,
-    _05C=lambda n: .5,
+    _02C=lambda n: 2e-1,
+    _9e2=lambda n: 9e-2,
+    _5e2=lambda n: 5e-2,
+    _5e3=lambda n: 5e-3,
 )
+
 
 _scg2_param_dict = dict(
     C1=lambda n: 1e-1,
     C2=lambda n: 1e-2,
     C3=lambda n: 1e-3,
+    C4=lambda n: 1e-4,
+    C5=lambda n: 1e-5,
+    C6=lambda n: 1e-6,
     _1C=lambda n: 1.0,
     _2C=lambda n: 2.0,
     _10C=lambda n: 1e+1,
-    _05C=lambda n: .5,
+    _05C=lambda n: 5e-1,
+    _5e2=lambda n: 5e-2,
+    _5e3=lambda n: 5e-3,
 )
 
 _scg3_param_dict = dict(

@@ -6,9 +6,10 @@ from torch.nn import CrossEntropyLoss
 from torch.optim.optimizer import Optimizer
 from torch.utils import data
 from torchvision.datasets import CIFAR100
-from torchvision.models.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
+from model.resnet_pytorch100 import resnet18, resnet34, resnet50, resnet101, resnet152
 from torchvision.models.densenet import densenet121, densenet161, densenet169, densenet201
 from torchvision.transforms import ToTensor
+import torchvision.transforms as transforms
 
 from experiment.base import BaseExperiment, LossNaError, ResultDict
 from model.resnetc100 import resnet20, resnet32, resnet44, resnet56, resnet110
@@ -37,8 +38,26 @@ class ExperimentCIFAR100(BaseExperiment):
     def __init__(self, dataset_name='CIFAR100', **kwargs) -> None:
         super(ExperimentCIFAR100, self).__init__(dataset_name=dataset_name, **kwargs)
 
-    def prepare_data(self, train: bool, **kwargs) -> data.Dataset:
-        return CIFAR100(root=self.data_dir, train=train, download=True, transform=ToTensor(), **kwargs)
+    def prepare_data(self, train: bool, **kwargs):
+        transform_train = transforms.Compose([
+            #transforms.ToPILImage(),
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomRotation(15),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5070751592371323, 0.48654887331495095, 0.4409178433670343), (0.2673342858792401, 0.2564384629170883, 0.27615047132568404))
+        ])
+        
+        transform_test = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.5088964127604166, 0.48739301317401956, 0.44194221124387256), (0.2682515741720801, 0.2573637364478126, 0.2770957707973042))
+        ])
+        if train == 'True':
+            trainset = CIFAR100(root=self.data_dir, train=train, download=True, transform=transform_train)
+            return trainset
+        else:
+            testset = CIFAR100(root=self.data_dir, train=train, download=True, transform=transform_test)
+            return testset
 
     def prepare_model(self, model_name: Optional[str], **kwargs) -> Module:
         if model_name and model_name in MODEL_DICT:
@@ -70,8 +89,8 @@ class ExperimentCIFAR100(BaseExperiment):
             optimizer.step(closure=None)
             running_loss += loss.item()
             total += labels.size(0)
-            _, predicted = torch.max(outputs.data, 1)
-            correct += (predicted == labels).sum().item()
+            _, predicted = outputs.max(1)
+            correct += predicted.eq(labels).sum().item()
             i += 1
         return net, dict(train_loss=running_loss / i, train_accuracy=correct / total)
 
@@ -88,8 +107,8 @@ class ExperimentCIFAR100(BaseExperiment):
                 outputs = net(inputs)
                 loss = criterion(outputs, labels)
                 running_loss += loss.item()
-                _, predicted = torch.max(outputs.data, 1)
+                _, predicted = outputs.max(1)
                 total += labels.size(0)
-                correct += (predicted == labels).sum().item()
+                correct += predicted.eq(labels).sum().item()
                 i += 1
         return dict(test_loss=running_loss / i, test_accuracy=correct / total)

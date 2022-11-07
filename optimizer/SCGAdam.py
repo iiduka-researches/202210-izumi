@@ -70,7 +70,6 @@ class SCGAdam(Optimizer):
                         # Maintains max of all exp. moving avg. of sq. grad. values
                         state['max_exp_avg_sq'] = torch.zeros_like(p)
                     state['stochastic_scg'] = None
-                    state['past_grad'] = None
 
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
                 if amsgrad:
@@ -87,14 +86,12 @@ class SCGAdam(Optimizer):
                     grad = grad.add(p, alpha=group['weight_decay'])
 
                 if state['stochastic_scg'] is None:
-                    state['past_grad'] = grad.clone()
                     state['stochastic_scg'] = (-grad).clone()
                 else:
                     scg = state['stochastic_scg']
                     scg1_param = scg1_param_fn(state['step'])
                     scg2_param = scg2_param_fn(state['step'])
                     state['stochastic_scg'] = -(1 + scg1_param) * grad + scg2_param * scg
-                    state['past_grad'] = grad.clone()
                 
                 exp_avg.mul_(beta1).add_(state['stochastic_scg'], alpha=1 - beta1)
                 exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1 - beta2)

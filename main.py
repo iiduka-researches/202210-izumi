@@ -6,6 +6,7 @@ from experiment.cifar10 import ExperimentCIFAR10
 from experiment.cifar100 import ExperimentCIFAR100
 from experiment.mnist import ExperimentMNIST
 from experiment.imdb import ExperimentIMDb
+
 from optimizer.adam import Adam
 from optimizer.adam2 import Adam2
 from optimizer.SCGAdam import SCGAdam
@@ -19,27 +20,25 @@ from optimizer.adagrad2 import Adagrad2
 from optimizer.adamw import AdamW
 from optimizer.adamw2 import AdamW2
 
+import torch.optim as optim
 
 
-
-Optimizer = Union[SGD, SGD2, RMSprop, RMSprop2, Adagrad, Adagrad2, AdamW, AdamW2, Adam, Adam2, SCGAdam, SCGAdam2, ]
+Optimizer = Union[SGD, SGD2, RMSprop, RMSprop2, Adagrad, Adagrad2, AdamW, AdamW2, Adam, Adam2, SCGAdam, SCGAdam2,] 
 OptimizerDict = Dict[str, Tuple[Any, Dict[str, Any]]]
 
 def prepare_optimizers(lr: float, optimizer: str = None, **kwargs) -> OptimizerDict:
     optimizers = dict(
-        SGD_Existing=(SGD, dict(lr=1e-3, **kwargs)),
-        Momentum_Existing=(SGD, dict(lr=1e-3, momentum=0.9, **kwargs)),
-        RMSProp_Existing=(RMSprop, dict(lr=1e-3, alpha=0.99, **kwargs)),
-        Adagrad_Existing=(Adagrad, dict(lr=1e-3, **kwargs)),
-        AdamW_Existing=(AdamW, dict(lr=1e-3, weight=1e-2, amsgrad=False, **kwargs)),
-        Adam_Existing=(Adam, dict(lr=1e-3, amsgrad=False, **kwargs)),
-        AMSGrad_Existing=(Adam, dict(lr=1e-3, amsgrad=True, **kwargs)),
-        SCGAdam_1C_1e1=(SCGAdam, dict(lr=1e-3, amsgrad=False, cg1_type='_1C', cg2_type='C1', **kwargs)),
-        SCGAdam_1C_1e2=(SCGAdam, dict(lr=1e-3, amsgrad=False, cg1_type='_1C', cg2_type='C2', **kwargs)),
-        SCGAdam_1C_1e3=(SCGAdam, dict(lr=1e-3, amsgrad=False, cg1_type='_1C', cg2_type='C3', **kwargs)),
-        SCGAMSG_1C_1e1=(SCGAdam, dict(lr=1e-3, amsgrad=True, cg1_type='_1C', cg2_type='C1', **kwargs)),
-        SCGAMSG_1C_1e2=(SCGAdam, dict(lr=1e-3, amsgrad=True, cg1_type='_1C', cg2_type='C2', **kwargs)),
-        SCGAMSG_1C_1e3=(SCGAdam, dict(lr=1e-3, amsgrad=True, cg1_type='_1C', cg2_type='C3', **kwargs)),
+        Momentum_Cosinelr1e1wd5e4=(SGD, dict(lr=1e-1, momentum=0.9, **kwargs)),
+        Adam_Cosinelr1e3=(Adam, dict(lr=1e-3, amsgrad=False, **kwargs)),
+        AdamW_Cosinelr1e3=(AdamW, dict(lr=1e-3, weight=1e-2, amsgrad=False, **kwargs)),
+        AMSGrad_Cosinelr1e3=(Adam, dict(lr=1e-3, amsgrad=True, **kwargs)),
+        SGD_Cosinelr1e2=(SGD, dict(lr=1e-2, **kwargs)),
+        RMSProp_Cosinelr1e2=(RMSprop, dict(lr=1e-2, alpha=0.99, **kwargs)),
+        Adagrad_Cosinelr1e2=(Adagrad, dict(lr=1e-2, **kwargs)),
+        SCGAdam_C1C3Cosinelr1e3=(SCGAdam, dict(lr=1e-3, amsgrad=False, cg1_type='C1', cg2_type='C3', **kwargs)),
+        SCGAMSG_C1C3Cosinelr1e3=(SCGAdam, dict(lr=1e-3, amsgrad=True, cg1_type='C1', cg2_type='C3', **kwargs)),
+        SCGAdam_C1C2Cosinelr1e3=(SCGAdam, dict(lr=1e-3, amsgrad=False, cg1_type='C1', cg2_type='C2', **kwargs)),
+        SCGAMSG_C1C2Cosinelr1e3=(SCGAdam, dict(lr=1e-3, amsgrad=True, cg1_type='C1', cg2_type='C2', **kwargs)),
 
         SGDD0_Existing=(SGD2, dict(lr='D0', momentum='No', **kwargs)),
         MomentumD0_Existing=(SGD2, dict(lr='D0', momentum='D1', **kwargs)),
@@ -49,9 +48,7 @@ def prepare_optimizers(lr: float, optimizer: str = None, **kwargs) -> OptimizerD
         AdamD0_Existing=(Adam2, dict(lr='D0', beta='D1', amsgrad=False, **kwargs)),
         AMSGradD0_Existing=(Adam2, dict(lr='D0', beta='D1', amsgrad=True, **kwargs)),
         SCGAdam_D1=(SCGAdam2, dict(lr='D0', beta='D1', amsgrad=False, cg1_type='D1', cg2_type='D1', **kwargs)),
-        SCGAdam_D2=(SCGAdam2, dict(lr='D0', beta='D1', amsgrad=False, cg1_type='D2', cg2_type='D2', **kwargs)),
         SCGAMSG_D1=(SCGAdam2, dict(lr='D0', beta='D1', amsgrad=True, cg1_type='D1', cg2_type='D1', **kwargs)),
-        SCGAMSG_D2=(SCGAdam2, dict(lr='D0', beta='D1', amsgrad=True, cg1_type='D2', cg2_type='D2', **kwargs)),
 
     )
     if optimizer:
@@ -99,23 +96,21 @@ def mnist(lr=1e-3, max_epoch=100, weight_decay=.0, batch_size=128, model_name='P
     e.execute(optimizers)
 
 
-def cifar10(max_epoch=200, lr=1e-3, weight_decay=0, batch_size=128, model_name='ResNet44', num_workers=0,
-            optimizer=None, use_scheduler=False, **kwargs) -> None:
-    scheduler = LambdaLR if use_scheduler else None
-    kw_scheduler = dict(lr_lambda=lambda epoch: lr_warm_up(epoch, lr))
+def cifar10(max_epoch=200, lr=1e-3, weight_decay=0, batch_size=128, model_name='ResNet18', num_workers=1,
+            optimizer=None, use_scheduler=True, **kwargs) -> None:
+    scheduler = CosineAnnealingLR if use_scheduler else None
     optimizers = prepare_optimizers(lr=lr, optimizer=optimizer, weight_decay=weight_decay)
     e = ExperimentCIFAR10(max_epoch=max_epoch, batch_size=batch_size, model_name=model_name,
-                          kw_loader=dict(num_workers=num_workers), scheduler=scheduler, kw_scheduler=kw_scheduler, 
+                          kw_loader=dict(num_workers=num_workers), scheduler=scheduler,
                           **kwargs)
     e(optimizers)
 
-def cifar100(max_epoch=200, lr=1e-3, weight_decay=0, batch_size=128, model_name='ResNet44', num_workers=0,
-            optimizer=None, use_scheduler=False, **kwargs) -> None:
-    scheduler = LambdaLR if use_scheduler else None
-    kw_scheduler = dict(lr_lambda=lambda epoch: lr_warm_up(epoch, lr))
+def cifar100(max_epoch=200, lr=1e-3, weight_decay=0, batch_size=128, model_name='ResNet18', num_workers=1,
+            optimizer=None, use_scheduler=True, **kwargs) -> None:
+    scheduler = CosineAnnealingLR if use_scheduler else None
     optimizers = prepare_optimizers(lr=lr, optimizer=optimizer, weight_decay=weight_decay)
     e = ExperimentCIFAR100(max_epoch=max_epoch, batch_size=batch_size, model_name=model_name,
-                          kw_loader=dict(num_workers=num_workers), scheduler=scheduler, kw_scheduler=kw_scheduler, 
+                          kw_loader=dict(num_workers=num_workers), scheduler=scheduler,
                           **kwargs)
     e(optimizers)
 

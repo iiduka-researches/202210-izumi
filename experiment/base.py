@@ -13,6 +13,8 @@ from torch.nn import Module
 from torch.optim.optimizer import Optimizer
 from torch.utils import data
 from tqdm import tqdm
+import torch.backends.cudnn as cudnn
+from torch.optim.lr_scheduler import _LRScheduler
 
 from utils.line.notify import notify, notify_error
 
@@ -78,19 +80,16 @@ class BaseExperiment(ABC, metaclass=ABCMeta):
         raise NotImplementedError
 
     def prepare_loaders(self):
-        train_loader = data.DataLoader(self.train_data, batch_size=self.batch_size, shuffle=True,
-                                       worker_init_fn=worker_init_fn, **self.kw_loader)
-        test_loader = data.DataLoader(self.test_data, batch_size=self.batch_size, shuffle=False,
-                                      worker_init_fn=worker_init_fn, **self.kw_loader)
+        train_loader = data.DataLoader(self.train_data, batch_size=self.batch_size, shuffle=True, num_workers=1)
+        test_loader = data.DataLoader(self.test_data, batch_size=self.batch_size, shuffle=False, num_workers=1)
         return train_loader, test_loader
 
     def train(self, net: Module, optimizer: Optimizer, train_loader: data.DataLoader,
               test_loader: data.DataLoader) -> Tuple[Module, Result]:
         if self.scheduler:
-            scheduler = self.scheduler(optimizer, **self.kw_scheduler)
+            scheduler = self.scheduler(optimizer, T_max=self.max_epoch)
         else:
             scheduler = None
-
         results = []
         for epoch in tqdm(range(self.max_epoch)):
             start = time()
@@ -103,14 +102,11 @@ class BaseExperiment(ABC, metaclass=ABCMeta):
             result = arrange_result_as_dict(t=time() - start, train=train_result, validate=validate_result)
             results.append(result)
             if scheduler:
-                if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-                    scheduler.step(train_result['train_loss'])
-                else:
-                    scheduler.step()
-                notify(f'{scheduler.__dict__}')
-            if epoch % 10 == 0:
+                scheduler.step()
+            if epoch % 20 == 0:
                 notify(f'{epoch}{result}')
-
+                if scheduler:
+                    notify(f'{scheduler.__dict__}')
         return net, concat_dicts(results)
 
     @notify_error
@@ -190,8 +186,8 @@ def fix_seed(seed=0) -> None:
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = False
+    torch.backends.cudnn.benchmark = True
 
 
 def worker_init_fn(worker_id):
