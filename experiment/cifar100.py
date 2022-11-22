@@ -67,6 +67,7 @@ class ExperimentCIFAR100(BaseExperiment):
 
     def epoch_train(self, net: Module, optimizer: Optimizer, train_loader: data.DataLoader,
                     **kwargs) -> Tuple[Module, ResultDict]:
+        net.train()
         running_loss = 0.0
         i = 0
         total = 0
@@ -95,6 +96,7 @@ class ExperimentCIFAR100(BaseExperiment):
         return net, dict(train_loss=running_loss / i, train_accuracy=correct / total)
 
     def epoch_validate(self, net: Module, test_loader: data.DataLoader, **kwargs) -> ResultDict:
+        net.eval()
         running_loss = 0.0
         i = 0
         total = 0
